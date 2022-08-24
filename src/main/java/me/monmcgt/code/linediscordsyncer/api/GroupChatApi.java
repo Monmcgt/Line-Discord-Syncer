@@ -1,4 +1,4 @@
-package me.monmcgt.code.linediscordsyncer.util;
+package me.monmcgt.code.linediscordsyncer.api;
 
 import com.google.gson.Gson;
 import lombok.Data;
@@ -12,12 +12,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 @Service
-public class GroupChatApiUtil {
+public class GroupChatApi {
     private final Gson gson;
 
     private final ChannelAccessToken channelAccessToken;
 
-    public GroupChatApiUtil(Gson gson, ChannelAccessToken channelAccessToken) {
+    public GroupChatApi(Gson gson, ChannelAccessToken channelAccessToken) {
         this.gson = gson;
         this.channelAccessToken = channelAccessToken;
     }

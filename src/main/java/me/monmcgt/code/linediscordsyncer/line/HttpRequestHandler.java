@@ -1,8 +1,14 @@
 package me.monmcgt.code.linediscordsyncer.line;
 
 import com.google.gson.Gson;
+import me.monmcgt.code.linediscordsyncer.api.UserApi;
+import me.monmcgt.code.linediscordsyncer.discord.DiscordHelper;
+import me.monmcgt.code.linediscordsyncer.discord.DiscordService;
 import me.monmcgt.code.linediscordsyncer.event.TextMessageEvent;
+import me.monmcgt.code.linediscordsyncer.obj.TransferMessage;
 import me.monmcgt.code.linediscordsyncer.storage.GroupChatStorage;
+import me.monmcgt.code.linediscordsyncer.api.GroupChatApi;
+import me.monmcgt.code.linediscordsyncer.storage.UserStorage;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,10 +21,17 @@ public class HttpRequestHandler {
     private final Gson gson;
 
     private final GroupChatStorage groupChatStorage;
+    private final UserStorage userStorage;
 
-    public HttpRequestHandler(Gson gson, GroupChatStorage groupChatStorage) {
+    private final DiscordService discordService;
+    private final DiscordHelper discordHelper;
+
+    public HttpRequestHandler(Gson gson, GroupChatStorage groupChatStorage, UserStorage userStorage, DiscordService discordService, DiscordHelper discordHelper) {
         this.gson = gson;
         this.groupChatStorage = groupChatStorage;
+        this.userStorage = userStorage;
+        this.discordService = discordService;
+        this.discordHelper = discordHelper;
     }
 
     @PostMapping("/webhook")
@@ -29,16 +42,14 @@ public class HttpRequestHandler {
         if (events.length > 0) {
             TextMessageEvent.Event event = events[0];
             TextMessageEvent.Event.Source source = event.getSource();
+            String userId = source.getUserId();
             String groupId = source.getGroupId();
             if (groupId != null) {
 //                System.out.println("groupId: " + groupId);
-                String groupName = this.groupChatStorage.getGroupName(groupId);
-                if (groupName != null) {
-                    String text = event.getMessage().getText();
-                    System.out.println("----------------------------------------------------");
-                    System.out.println("Group Name: " + groupName);
-                    System.out.println("Message:\n" + text);
-                }
+                GroupChatApi.SummaryResponse groupSummary = this.groupChatStorage.getGroupSummary(groupId);
+                UserApi.SummaryResponse userSummary = this.userStorage.getUserSummary(userId);
+                TransferMessage transferMessage = new TransferMessage(event, groupSummary, userSummary, event.getMessage().getText());
+                this.discordHelper.sendMessage(transferMessage);
             }
         }
     }
